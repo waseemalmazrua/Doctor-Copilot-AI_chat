@@ -23,7 +23,7 @@ COPY . .
 RUN mkdir -p static/uploads static/masks templates model
 
 # تعيين port
-EXPOSE 8001
+EXPOSE 8080
 
 # أمر التشغيل
 CMD ["python", "main.py"]
