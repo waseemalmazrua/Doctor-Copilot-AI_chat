@@ -137,8 +137,8 @@ async function analyzeImage() {
         console.log('📦 API Response:', result); // 🔥 للت debugging
 
         if (result.success) {
-            document.getElementById('originalImage').src = result.original_image;
-            document.getElementById('overlayImage').src = result.overlay_image;
+            document.getElementById('originalImage').src = `data:image/png;base64,${result.original_image_base64}`;
+            document.getElementById('overlayImage').src = `data:image/png;base64,${result.overlay_image_base64}`;
             resultsContainer.style.display = 'block';
             showNotification('Analysis completed successfully', 'success');
 
