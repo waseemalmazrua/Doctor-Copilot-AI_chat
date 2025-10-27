@@ -304,15 +304,19 @@ async def analyze_image(file: UploadFile = File(...)):
         else:
             ai_analysis = "🔶 AI assistant not available - using neural segmentation only"
 
-        # حفظ الصور
-        mask_filename = f"mask_{unique_id}.png"
-        mask_path = f"static/masks/{mask_filename}"
-        mask_resized.save(mask_path)
-
-        overlay_filename = f"overlay_{unique_id}.png"
-        overlay_path = f"static/masks/{overlay_filename}"
+         # ✅ حفظ مؤقت في /tmp
+        overlay_path = f"/tmp/overlay_{unique_id}.png"
         overlay_image.save(overlay_path)
 
+        # ✅ تحويل الصورة الناتجة إلى Base64 مباشرة
+        with open(overlay_path, "rb") as img_file:
+            encoded_overlay = base64.b64encode(img_file.read()).decode("utf-8")
+
+        # ✅ نفس الشيء لو تبي الأصلية (اختياري)
+        with open(original_path, "rb") as img_file:
+            encoded_original = base64.b64encode(img_file.read()).decode("utf-8")
+
+        # ✅ إرجاع النتيجة كـ JSON يحتوي صور Base64
         return JSONResponse({
             "success": True,
             "analysis": {
@@ -320,9 +324,9 @@ async def analyze_image(file: UploadFile = File(...)):
                 "status": status,
                 "color": color
             },
-            "ai_response": ai_analysis,  # 🔥 الرد التلقائي من المساعد
-            "original_image": f"/static/uploads/{original_filename}",
-            "overlay_image": f"/static/masks/{overlay_filename}",
+            "ai_response": ai_analysis,
+            "original_image_base64": encoded_original,
+            "overlay_image_base64": encoded_overlay,
             "model_used": "Neural Segmentation + AI Assistant" if model else "Demo"
         })
 
