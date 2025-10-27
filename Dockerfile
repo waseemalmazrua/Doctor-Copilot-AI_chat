@@ -1,4 +1,3 @@
-# Dockerfile
 FROM python:3.9-slim
 
 # تعيين مجلد العمل
@@ -25,5 +24,5 @@ RUN mkdir -p static/uploads static/masks templates model
 # تعيين port
 EXPOSE 8080
 
-# أمر التشغيل
-CMD ["python", "main.py"]
+# أمر التشغيل - استخدم هذا
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "main:app", "--bind", "0.0.0.0:8080"]
