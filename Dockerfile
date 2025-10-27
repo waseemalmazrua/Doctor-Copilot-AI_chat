@@ -1,28 +1,34 @@
+# === الأساس ===
 FROM python:3.9-slim
 
-# تعيين مجلد العمل
+# === مجلد العمل ===
 WORKDIR /app
 
-# تثبيت الاعتماديات النظامية
+# === تثبيت المكتبات النظامية المهمة لـ OpenCV و TensorFlow ===
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# نسخ ملف المتطلبات أولاً (لتحسين caching)
+# === نسخ ملف المتطلبات ===
 COPY requirements.txt .
 
-# تثبيت بايثون packages
+# === تثبيت بايثون packages ===
 RUN pip install --no-cache-dir -r requirements.txt
 
-# نسخ باقي الملفات
+# === نسخ المشروع بالكامل ===
 COPY . .
 
-# إنشاء المجلدات اللازمة
-RUN mkdir -p static/uploads static/masks templates model
+# === نسخ مجلد الموديل داخل الـ image (مهم جدًا) ===
+COPY models/ /app/models/
 
-# تعيين port
+# === إنشاء المجلدات اللازمة داخل /app (لضمان المسارات الصحيحة) ===
+RUN mkdir -p /app/static/uploads /app/static/masks /app/templates /app/models
+
+# === المنفذ ===
 EXPOSE 8080
 
-# أمر التشغيل - استخدم هذا
+# === أمر التشغيل ===
 CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "main:app", "--bind", "0.0.0.0:8080"]
