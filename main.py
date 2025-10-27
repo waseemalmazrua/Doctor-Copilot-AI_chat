@@ -247,22 +247,27 @@ async def analyze_image(file: UploadFile = File(...)):
 
                 # 🔥 إصلاح الـ overlay - بدون cv2
                 # إنشاء القناع الملون
+                # 🔥 إصلاح الـ overlay (نسخة تعمل على Cloud Run و localhost)
                 mask_resized = Image.fromarray((binary_mask * 255).astype(np.uint8)).resize(image.size)
-
-                # تحويل الصورة الأصلية إلى numpy array
-                original_array = np.array(image.convert('RGB'))
-
-                # إنشاء قناع أحمر بنفس حجم الصورة
                 binary_mask_resized = np.array(mask_resized) > 0
-                red_mask = np.zeros_like(original_array)
-                red_mask[binary_mask_resized] = [255, 0, 0]  # أحمر
 
-                # دمج الصور بدون cv2
-                alpha = 0.6  # شفافية الـ overlay
-                overlay_array = (original_array.astype(np.float32) * (1 - alpha) +
-                                 red_mask.astype(np.float32) * alpha).astype(np.uint8)
+                # تحويل الصورة الأصلية إلى مصفوفة NumPy
+                original_array = np.array(image.convert("RGB"))
 
-                overlay_image = Image.fromarray(overlay_array)
+                # تحويل الألوان إلى BGR لتجنب مشكلة الألوان في بيئات headless
+                original_bgr = original_array[..., ::-1]
+
+                # إنشاء ماسك ملون باللون الأحمر
+                red_mask = np.zeros_like(original_bgr)
+                red_mask[binary_mask_resized] = [0, 0, 255]  # أحمر (BGR)
+
+                # دمج الماسك مع الصورة الأصلية
+                alpha = 0.6
+                overlay_bgr = (original_bgr * (1 - alpha) + red_mask * alpha).astype(np.uint8)
+
+                # إعادة التحويل إلى RGB للعرض الصحيح في المتصفح
+                overlay_rgb = overlay_bgr[..., ::-1]
+                overlay_image = Image.fromarray(overlay_rgb)
 
                 # تحديد حالة الاكتشاف
                 if detection_percent < 2.0:
