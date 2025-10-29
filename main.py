@@ -64,28 +64,28 @@ else:
 # 🧠 تحميل النموذج
 model = None
 try:
-    # 🔹 المسار الجديد داخل Google Cloud Storage
-    model_path = "gs://lewagon-waseemalmazrua-ds.appspot.com/my_model_waseem_finetuned_50.keras"
-
-    # 🔹 إنشاء اتصال مع Cloud Storage
-    fs = gcsfs.GCSFileSystem()
-
-    # 🔹 تحميل المودل من الـ bucket مباشرة
-    with fs.open(model_path, 'rb') as f:
+    model_path = "model/my_model_waseem_finetuned_50.keras"
+    if os.path.exists(model_path):
+        # تحميل مع دوال القياس المخصصة
         model = tf.keras.models.load_model(
-            f,
+            model_path,
             custom_objects={
                 'dice_coef': dice_coef,
                 'iou': iou
             },
             compile=False
         )
-
-    print("✅ Model loaded successfully from Cloud Storage!")
-    print(f"📊 Model input shape: {model.input_shape}")
-
+        print("✅ Model loaded successfully!")
+        print(f"📊 Model input shape: {model.input_shape}")
+    else:
+        print(f"❌ Model file not found: {model_path}")
+        model_dir = "model"
+        if os.path.exists(model_dir):
+            available_models = os.listdir(model_dir)
+            print(f"📁 Available models: {available_models}")
 except Exception as e:
-    print(f"❌ Model failed to load from Cloud Storage: {e}")
+    print(f"❌ Model failed to load: {e}")
+
 
 # 🆕 🔥 أضف هذه الدالة هنا - إرسال تلقائي للمساعد AI
 async def analyze_with_ai_assistant(image_path: str, analysis_results: dict):
@@ -304,19 +304,15 @@ async def analyze_image(file: UploadFile = File(...)):
         else:
             ai_analysis = "🔶 AI assistant not available - using neural segmentation only"
 
-         # ✅ حفظ مؤقت في /tmp
-        overlay_path = f"/tmp/overlay_{unique_id}.png"
+        # حفظ الصور
+        mask_filename = f"mask_{unique_id}.png"
+        mask_path = f"static/masks/{mask_filename}"
+        mask_resized.save(mask_path)
+
+        overlay_filename = f"overlay_{unique_id}.png"
+        overlay_path = f"static/masks/{overlay_filename}"
         overlay_image.save(overlay_path)
 
-        # ✅ تحويل الصورة الناتجة إلى Base64 مباشرة
-        with open(overlay_path, "rb") as img_file:
-            encoded_overlay = base64.b64encode(img_file.read()).decode("utf-8")
-
-        # ✅ نفس الشيء لو تبي الأصلية (اختياري)
-        with open(original_path, "rb") as img_file:
-            encoded_original = base64.b64encode(img_file.read()).decode("utf-8")
-
-        # ✅ إرجاع النتيجة كـ JSON يحتوي صور Base64
         return JSONResponse({
             "success": True,
             "analysis": {
@@ -324,9 +320,9 @@ async def analyze_image(file: UploadFile = File(...)):
                 "status": status,
                 "color": color
             },
-            "ai_response": ai_analysis,
-            "original_image_base64": encoded_original,
-            "overlay_image_base64": encoded_overlay,
+            "ai_response": ai_analysis,  # 🔥 الرد التلقائي من المساعد
+            "original_image": f"/static/uploads/{original_filename}",
+            "overlay_image": f"/static/masks/{overlay_filename}",
             "model_used": "Neural Segmentation + AI Assistant" if model else "Demo"
         })
 
