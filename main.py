@@ -64,28 +64,28 @@ else:
 # 🧠 تحميل النموذج
 model = None
 try:
-    model_path = "model/my_model_waseem_finetuned_50.keras"
-    if os.path.exists(model_path):
-        # تحميل مع دوال القياس المخصصة
+    # 🔹 المسار الجديد داخل Google Cloud Storage
+    model_path = "gs://lewagon-waseemalmazrua-ds.appspot.com/my_model_waseem_finetuned_50.keras"
+
+    # 🔹 إنشاء اتصال مع Cloud Storage
+    fs = gcsfs.GCSFileSystem()
+
+    # 🔹 تحميل المودل من الـ bucket مباشرة
+    with fs.open(model_path, 'rb') as f:
         model = tf.keras.models.load_model(
-            model_path,
+            f,
             custom_objects={
                 'dice_coef': dice_coef,
                 'iou': iou
             },
             compile=False
         )
-        print("✅ Model loaded successfully!")
-        print(f"📊 Model input shape: {model.input_shape}")
-    else:
-        print(f"❌ Model file not found: {model_path}")
-        model_dir = "model"
-        if os.path.exists(model_dir):
-            available_models = os.listdir(model_dir)
-            print(f"📁 Available models: {available_models}")
-except Exception as e:
-    print(f"❌ Model failed to load: {e}")
 
+    print("✅ Model loaded successfully from Cloud Storage!")
+    print(f"📊 Model input shape: {model.input_shape}")
+
+except Exception as e:
+    print(f"❌ Model failed to load from Cloud Storage: {e}")
 
 # 🆕 🔥 أضف هذه الدالة هنا - إرسال تلقائي للمساعد AI
 async def analyze_with_ai_assistant(image_path: str, analysis_results: dict):
